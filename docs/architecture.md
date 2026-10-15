@@ -1,6 +1,6 @@
 # DeckCraft architecture
 
-> **Last reviewed:** 2026-10-10 · **Last updated:** 2026-10-10 · **Change:** major (created from the code on main at d556ff9; AGENTS.md §4 keeps the rules) · **Target:** Microsoft PowerPoint for Mac 16.113 (Microsoft 365)
+> **Last reviewed:** 2026-10-10 · **Last updated:** 2026-10-14 · **Change:** minor (on-slide structured equation editing on the equation-editor branch; overall readiness estimates unchanged) · **Target:** Microsoft PowerPoint for Mac 16.113 (Microsoft 365)
 
 How DeckCraft is built today. The binding rules (layering, everything is a command, thin UI, never
 break wasm, never crash) are in [AGENTS.md](../AGENTS.md) §3–§5; this document describes what
@@ -54,6 +54,17 @@ trapezoids). The show window and the presenter view are egui viewports; animatio
 comes from `anim::timeline` each frame. PDF export renders each slide at print resolution and
 overlays an invisible real-text layer with embedded font subsets.
 
+## Equations (equation-editor branch)
+
+`deckcraft-math::Editor` owns structure editing and command completion. Each document equation
+remains one `RunKind::Math` containing OMML; no second equation run format is introduced.
+`TextSel::equation` tracks the inner math caret/selection while the outer text caret stays at the
+run's start. Engine commands route typing, arrows, clipboard edits and pointer hits through that
+editor; document history restores both OMML and cursor state. `deckcraft-text` exposes the placed
+math geometry used for hit testing and overlays, including rotated/RTL paragraphs and table cells.
+The egui layer paints the temporary prompt, shading and caret and restores the previous ribbon tab
+on exit. These editor decorations are never written into the document or exported slide artwork.
+
 ## File I/O
 
 - **PPTX** (`crates/pptx`): lenient reader (unknown parts skipped, malformed parts logged and
@@ -74,4 +85,5 @@ macOS, Windows, Linux, FreeBSD and web artifacts.
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-14 | minor | Equation-editor branch: on-slide structured OMML editing, contextual tab, field shading and prose exit; full equation parity remains partial |
 | 2026-10-10 | major | Created from the code on main (d556ff9) and AGENTS.md §4 |

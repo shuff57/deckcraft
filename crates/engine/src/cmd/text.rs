@@ -128,10 +128,22 @@ pub(crate) fn ctx_for<'a>(doc: &'a Presentation, sel: &Selection) -> Option<Ctx<
 
 /// Lay out the text being edited (for vertical caret movement and hit testing).
 pub fn layout_for(st: &DocState, t: &TextSel) -> Option<deckcraft_text::TextLayout> {
-    if t.notes || t.cell.is_some() {
+    if t.notes {
         return None;
     }
     let sh = st.shape(t.shape)?;
+    if let Some((r, c)) = t.cell {
+        let ShapeKind::Table(table) = &sh.kind else { return None };
+        let ctx = ctx_for(&st.doc, &st.selection)?;
+        let body = deckcraft_render::table_cell_body(&ctx, table, r, c, table.cell(r, c)?);
+        let tmp = deckcraft_model::Shape { text: Some(body.clone()), ..Default::default() };
+        return Some(deckcraft_text::layout(
+            &ctx,
+            &tmp,
+            &body,
+            &deckcraft_text::Opts { rect: text_rect(st, t)?, fields: &deckcraft_text::NoFields, prompt_color: None, no_shrink: false },
+        ));
+    }
     let body = sh.text.as_ref()?;
     let ctx = ctx_for(&st.doc, &st.selection)?;
     let x = xfrm_of(&st.doc, &st.selection, sh);
@@ -142,6 +154,24 @@ pub fn layout_for(st: &DocState, t: &TextSel) -> Option<deckcraft_text::TextLayo
         body,
         &deckcraft_text::Opts { rect: geo.text_rect, fields: &deckcraft_text::NoFields, prompt_color: None, no_shrink: false },
     ))
+}
+
+/// Rectangle and transform used by the renderer, shared by equation hit testing and overlays.
+pub fn text_rect(st: &DocState, t: &TextSel) -> Option<deckcraft_geom::Rect> {
+    let sh = st.shape(t.shape)?;
+    if let Some((r, c)) = t.cell {
+        let ShapeKind::Table(table) = &sh.kind else { return None };
+        let heights = crate::tools::table_rows(st, table);
+        return deckcraft_render::table_cell_rects(table, &heights).into_iter().find(|(ri, ci, _)| (*ri, *ci) == (r, c)).map(|(_, _, rect)| rect);
+    }
+    let x = xfrm_of(&st.doc, &st.selection, sh);
+    Some(deckcraft_render::shape_geometry(sh, x.w, x.h).text_rect)
+}
+
+pub fn transform_for(st: &DocState, t: &TextSel, layout: &deckcraft_text::TextLayout) -> Option<deckcraft_geom::Affine> {
+    let sh = st.shape(t.shape)?;
+    let x = xfrm_of(&st.doc, &st.selection, sh);
+    Some(deckcraft_render::text_transform(x.affine(), text_rect(st, t)?, layout.rotation))
 }
 
 fn pos_param(p: &Value, key: &str) -> Option<Pos> {
@@ -184,7 +214,7 @@ fn edit(s: &mut Session, p: &Value) -> Result<Value> {
     }
     s.select(|_, sel| {
         sel.shapes = vec![id];
-        sel.text = Some(TextSel { shape: id, anchor: at, caret: at, cell, notes: false });
+        sel.text = Some(TextSel { shape: id, anchor: at, caret: at, cell, notes: false, ..Default::default() });
     })?;
     Ok(json!({"id": id, "at": [at.0, at.1]}))
 }
@@ -215,6 +245,9 @@ fn typed(s: &Session, body: &TextBody, at: Pos, text: &str) -> String {
 }
 
 pub(crate) fn insert_text(s: &mut Session, text: &str, props: Option<RunProps>) -> Result<Value> {
+    if let Some(result) = super::equation::type_text(s, text)? {
+        return Ok(result);
+    }
     let text = {
         let st = s.doc()?;
         match &st.selection.text {
@@ -228,7 +261,10 @@ pub(crate) fn insert_text(s: &mut Session, text: &str, props: Option<RunProps>) 
     let pos = edit_text(s, |body, t| {
         let (a, b) = t.ordered();
         let at = ed::delete(body, a, b);
-        let props = props.clone().or_else(|| if a != b { Some(ed::props_at(body, at)) } else { unlinked_at_link_end(body, at) });
+        let props = props
+            .clone()
+            .or_else(|| super::equation::prose_props(body, at))
+            .or_else(|| if a != b { Some(ed::props_at(body, at)) } else { unlinked_at_link_end(body, at) });
         let c = ed::insert(body, at, &text, props);
         t.anchor = c;
         t.caret = c;
@@ -346,6 +382,10 @@ fn insert(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 pub(crate) fn delete_dir(s: &mut Session, dir: &str) -> Result<Value> {
+    let key = if matches!(dir, "forward" | "wordForward") { deckcraft_math::Key::Delete } else { deckcraft_math::Key::Backspace };
+    if let Some(result) = super::equation::key(s, key, false)? {
+        return Ok(result);
+    }
     let dir = dir.to_string();
     edit_text(s, move |body, t| {
         let (a, b) = t.ordered();
@@ -385,6 +425,23 @@ fn delete(s: &mut Session, p: &Value) -> Result<Value> {
 fn move_caret(s: &mut Session, p: &Value) -> Result<Value> {
     let to = str_param(p, "to").unwrap_or("right").to_string();
     let extend = bool_or(p, "extend", false);
+    let math_key = match to.as_str() {
+        "left" | "wordLeft" => Some(deckcraft_math::Key::Left),
+        "right" | "wordRight" => Some(deckcraft_math::Key::Right),
+        "up" => Some(deckcraft_math::Key::Up),
+        "down" => Some(deckcraft_math::Key::Down),
+        "lineStart" | "paraStart" | "start" => Some(deckcraft_math::Key::Home),
+        "lineEnd" | "paraEnd" | "end" => Some(deckcraft_math::Key::End),
+        _ => None,
+    };
+    if let Some(key) = math_key
+        && let Some(result) = super::equation::key(s, key, extend)?
+    {
+        return Ok(result);
+    }
+    if !extend && matches!(to.as_str(), "left" | "right") && super::equation::enter_adjacent(s, to == "right")? {
+        return ok();
+    }
     let st = s.doc()?;
     let t = st.selection.text.clone().ok_or_else(|| bad("text.move", "not editing text"))?;
     let body = body_of(st, &t).cloned().unwrap_or_default();
@@ -442,12 +499,16 @@ fn select(s: &mut Session, p: &Value) -> Result<Value> {
         if let Some(t) = sel.text.as_mut() {
             t.anchor = a;
             t.caret = c;
+            t.equation = None;
         }
     })?;
     ok()
 }
 
 fn select_all(s: &mut Session, _p: &Value) -> Result<Value> {
+    if let Some(result) = super::equation::select_all(s)? {
+        return Ok(result);
+    }
     let st = s.doc()?;
     let t = st.selection.text.clone().ok_or_else(|| bad("text.selectAll", "not editing text"))?;
     let end = body_of(st, &t).map(ed::end).unwrap_or((0, 0));

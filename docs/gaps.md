@@ -1,6 +1,6 @@
 # Where DeckCraft falls short of PowerPoint
 
-> **Last reviewed:** 2026-10-10 · **Last updated:** 2026-10-10 · **Change:** minor (core-workflow alpha gate added; stage stays alpha; previous: major, first itemized gap list; full re-measure against PowerPoint for Mac 16.113.4 and the open GitHub issues) · **Target:** Microsoft PowerPoint for Mac 16.113 (Microsoft 365)
+> **Last reviewed:** 2026-10-10 · **Last updated:** 2026-10-14 · **Change:** minor (on-slide structured equation editing on the equation-editor branch; overall readiness estimates unchanged) · **Target:** Microsoft PowerPoint for Mac 16.113 (Microsoft 365)
 
 Every known shortfall, one entry each, ranked by how much it stops someone who presents with
 PowerPoint from switching. This is the work list: pick from the top. Numbers are summarized in
@@ -175,8 +175,11 @@ Detail in [animation-parity.md](animation-parity.md). 10–16 h; the pane is a *
 - **Estimate:** 8–14 h (Hunspell-format dictionaries under an open licence per language).
 
 ### Equations
-- **Evidence:** checklist row missing; PR #55 (OMML editor, +10.5k lines) is open.
-- **Estimate:** 3–6 h to review, land and round-trip.
+- **Evidence:** on the equation-editor branch, PR #55's structured OMML model now supports
+  direct on-slide editing, an empty field prompt, Space-completed backslash commands, and
+  contextual ribbon/shading. The checklist is partial; integration with main, native PowerPoint
+  interoperability testing, equation ribbon controls and broader LaTeX coverage remain open.
+- **Estimate:** the earlier 3–6 h integration estimate needs re-evaluation against current main.
 
 ### Smaller missing rows
 Zoom (summary/section/slide, 6–10 h), reuse slides (2–4 h), laser pointer (1–2 h), transition
@@ -247,6 +250,7 @@ Detail in [localization-parity.md](localization-parity.md).
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-14 | minor | Equation-editor branch: on-slide structured OMML editing, contextual tab, field shading and prose exit; full equation parity remains partial |
 | 2026-10-10 | minor | Noted that no gap blocks alpha (core-workflow gate passes) |
 | 2026-10-10 | major | Created: every gap from the 2026-10-10 re-measure and the 16 open GitHub issues, ranked, with beta blockers marked |
 
@@ -254,7 +258,9 @@ Detail in [localization-parity.md](localization-parity.md).
 
 - OMML that rebinds prefixes (an alias prefix bound to the OMML URI plus a different URI bound to `m`)
   is mis-namespaced on rewrite in `crates/math/src/xml.rs` `start_extras`.
-- Not yet: copy/paste of selected sub-trees inside the dialog canvas, undo inside the dialog,
-  auto-paired brackets.
+- On-slide edits use the existing structured editor and document undo/redo. The Equation tab
+  is intentionally empty; the dialog still provides the template palette. Backslash commands
+  complete on Space; bare-name shortcuts retain their existing immediate conversion.
+- Full LaTeX coverage and native PowerPoint interoperability validation remain open.
 - Radical and stretchy-delimiter fit is close to, but not at, KaTeX quality; a math font (STIX Two
   Math) is the fix, used for variants and extensible parts in `crates/text/src/math.rs`.

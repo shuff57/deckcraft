@@ -1,6 +1,6 @@
 # PowerPoint feature checklist
 
-> **Generated:** 2026-10-10 (summary by `cargo xtask parity`; rows re-scored 2026-10-10 against PowerPoint for Mac 16.113.4) · **Target:** Microsoft PowerPoint for Mac 16.113 (Microsoft 365)
+> **Generated:** 2026-10-14 (summary by `cargo xtask parity`; rows re-scored 2026-10-10 against PowerPoint for Mac 16.113.4) · **Target:** Microsoft PowerPoint for Mac 16.113 (Microsoft 365)
 
 The summary between `<!-- SUMMARY -->
 **Weighted breadth parity: 79%** over 191 features.
@@ -9,7 +9,7 @@ The summary between `<!-- SUMMARY -->
 |---|---|---|---|---|---|
 | P0 | 72 | 60 | 12 | 0 | 92% |
 | P1 | 65 | 38 | 21 | 6 | 75% |
-| P2 | 54 | 13 | 13 | 28 | 36% |
+| P2 | 54 | 13 | 14 | 27 | 37% |
 
 | Area | Parity |
 |---|---|
@@ -21,7 +21,7 @@ The summary between `<!-- SUMMARY -->
 | Shapes | 86% |
 | Format | 81% |
 | Arrange | 100% |
-| Text | 80% |
+| Text | 81% |
 | Tables | 89% |
 | Charts | 65% |
 | SmartArt | 33% |
@@ -158,7 +158,7 @@ Open P0 items: Start screen (new, templates/themes, recent), Contextual tabs (Sh
 | Text | Thesaurus | P2 | M |
 | Text | AutoCorrect and smart quotes | P2 | M |
 | Text | Symbols and emoji | P1 | D |
-| Text | Equations | P2 | M |
+| Text | Equations | P2 | P |
 | Text | Hyperlinks (URL, slide, email) | P1 | D |
 | Text | Date/time and slide number fields | P1 | D |
 | Text | Right-to-left and complex scripts | P1 | P |
@@ -233,3 +233,9 @@ Open P0 items: Start screen (new, templates/themes, recent), Contextual tabs (Sh
 | Platforms (✱) | macOS, Windows, Linux builds | P0 | P |
 | Platforms (✱) | Web (WASM) build | P1 | D |
 | Platforms (✱) | BSD build | P2 | P |
+
+## Revision history
+
+| Date | Change | Summary |
+|---|---|---|
+| 2026-10-14 | minor | Equations M → P on the equation-editor branch: structured OMML plus on-slide editing; ribbon controls and full interoperability validation remain open |

@@ -67,6 +67,17 @@ pub struct TextSel {
     /// Editing the slide's speaker notes (shape is ignored).
     #[serde(default)]
     pub notes: bool,
+    /// Caret inside a structured OMML run. The outer caret stays at that run's start.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub equation: Option<EquationSel>,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EquationSel {
+    pub run: usize,
+    pub caret: deckcraft_math::Caret,
+    pub anchor: Option<usize>,
 }
 
 impl TextSel {

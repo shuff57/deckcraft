@@ -22,7 +22,7 @@
 mod bidi;
 pub mod datetime;
 mod math;
-pub use math::{EqLayout, SeqGeo, layout_equation};
+pub use math::{EqGeometry, EqLayout, SeqGeo, layout_equation};
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -111,8 +111,18 @@ pub struct LineInfo {
     pub start_offset: f64,
 }
 
+/// An equation's actual position and inner caret geometry in the laid-out paragraph.
+#[derive(Clone, Debug)]
+pub struct PlacedEquation {
+    pub para: usize,
+    pub chars: (usize, usize),
+    pub rect: Rect,
+    pub geometry: EqGeometry,
+}
+
 #[derive(Clone, Debug, Default)]
 pub struct TextLayout {
+    pub equations: Vec<PlacedEquation>,
     pub runs: Vec<GlyphRun>,
     pub decos: Vec<Deco>,
     pub lines: Vec<LineInfo>,
@@ -1241,6 +1251,23 @@ fn layout_scaled(ctx: &Ctx, shape: &Shape, body: &TextBody, bp: &BodyProps, opts
                 let joiners = p.cells.iter().skip(ci + 1).take_while(|c| c.atom.is_none() && c.ch == '\u{2060}').count();
                 let base_y = line.baseline - st.baseline * st.size;
                 math::emit(m, cx, base_y, st.color, st.alpha, line.para, (ci, ci + 1 + joiners), &mut out.runs, &mut out.decos);
+                out.equations.push(PlacedEquation {
+                    para: line.para,
+                    chars: (ci, ci + 1 + joiners),
+                    rect: Rect::new(cx, base_y - m.asc, cx + m.w, base_y + m.desc),
+                    geometry: EqGeometry {
+                        geo: m
+                            .geo
+                            .iter()
+                            .map(|g| SeqGeo {
+                                path: g.path.clone(),
+                                xs: g.xs.iter().map(|x| x + cx).collect(),
+                                top: g.top + base_y,
+                                bottom: g.bottom + base_y,
+                            })
+                            .collect(),
+                    },
+                });
                 if let Some(hl) = st.highlight {
                     out.decos.push(Deco { rect: Rect::new(cx, line.top, cx1, line.bottom), color: hl, behind: true, para: line.para, path: None });
                 }

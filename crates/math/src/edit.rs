@@ -14,7 +14,7 @@ use crate::{MAX_DEPTH, Math, Node, Seq};
 pub type Path = Vec<(usize, usize)>;
 
 /// A position in the tree: inside the sequence at `path`, after `pos` units.
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct Caret {
     pub path: Path,
     pub pos: usize,
@@ -632,6 +632,11 @@ impl Editor {
 
     fn type_char_raw(&mut self, c: char) {
         self.fix();
+        // An explicit LaTeX command stays visible until Space commits it. Bare names retain
+        // the editor's existing immediate conversion, including in the dialog.
+        if c == ' ' && self.complete_command() {
+            return;
+        }
         // `x^2` ends after its digits when anything but another digit, `.`, `^` or `_` follows
         // (`mv^2/2` is a fraction of `mv^2`, `x^2sin x` is `x^2` times `sin x`).
         if !(c.is_ascii_digit() || matches!(c, '.' | '^' | '_') || c.is_whitespace() || c.is_control())
@@ -1060,6 +1065,9 @@ impl Editor {
         while s > 0 && matches!(cls.get(s - 1), Some(Some(c)) if c.is_ascii_alphabetic()) {
             s -= 1;
         }
+        if s > 0 && cls.get(s - 1) == Some(&Some('\\')) {
+            return;
+        }
         let run: String = cls.get(s..pos).unwrap_or(&[]).iter().filter_map(|c| *c).collect();
         if run.ends_with("sqrt") && self.can_nest() {
             self.delete_range(pos - 4, pos);
@@ -1080,6 +1088,45 @@ impl Editor {
             self.delete_range(pos - n, pos);
             self.insert_char(*sym);
         }
+    }
+
+    /// Complete only recognised backslash commands; unknown commands remain literal.
+    fn complete_command(&mut self) -> bool {
+        if self.selection().is_some() {
+            return false;
+        }
+        let cls = unit_chars(self.seq());
+        let end = self.caret.pos.min(cls.len());
+        let mut start = end;
+        while start > 0 && matches!(cls.get(start - 1), Some(Some(c)) if c.is_ascii_alphabetic()) {
+            start -= 1;
+        }
+        if start == 0 || cls.get(start - 1) != Some(&Some('\\')) {
+            return false;
+        }
+        let name: String = cls.get(start..end).unwrap_or(&[]).iter().filter_map(|c| *c).collect();
+        if let Some((_, symbol)) = GREEK.iter().chain(WORDS).find(|(n, _)| *n == name) {
+            self.delete_range(start - 1, end);
+            self.insert_char(*symbol);
+            return true;
+        }
+        if (name == "sqrt" || name == "frac" || FUNCS.contains(&name.as_str()) || matches!(name.as_str(), "sum" | "prod" | "int" | "lim"))
+            && self.can_nest()
+        {
+            self.delete_range(start - 1, start);
+            self.caret.pos = end - 1;
+            if name == "frac" {
+                self.delete_range(start - 1, self.caret.pos);
+                if let Some(i) = self.insert_nodes(vec![Node::Frac { num: vec![], den: vec![] }]) {
+                    self.caret.path.push((i, 0));
+                    self.caret.pos = 0;
+                }
+            } else {
+                self.autoconvert();
+            }
+            return true;
+        }
+        false
     }
 
     /// A whole typed word (`pm`, `sin`, `sum`, `lim`...) becomes its symbol or structure.

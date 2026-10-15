@@ -47,6 +47,7 @@ pub fn big_button_ex(ui: &mut Ui, icon: Icon, label: &str, enabled: bool, split:
     };
     let main_resp =
         if split { ui.interact(main_rect, resp.id.with("main"), if enabled { Sense::click() } else { Sense::hover() }) } else { resp.clone() };
+    main_resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, enabled, label));
     let arrow_resp = arrow_rect.map(|r| ui.interact(r, resp.id.with("arrow"), if enabled { Sense::click() } else { Sense::hover() }));
     if let Some(c) = bg(ui, &main_resp, selected, &t) {
         painter.rect_filled(if split { main_rect } else { rect }, CornerRadius::same(4), c);

@@ -1,6 +1,12 @@
 //! Equations: an inline `Math` run holds the OMML (canonical, with `xmlns:m`) and its linear
 //! text. The commands here create, replace and read those runs; the dialog and agents use them.
 
+mod inline;
+#[cfg(test)]
+mod inline_tests;
+pub use inline::active;
+pub(crate) use inline::{editor, enter_adjacent, key, paste, prose_props, select_all, type_text};
+
 use deckcraft_math::Math;
 use deckcraft_model::text::{Run, RunKind, RunProps};
 use deckcraft_model::{ShapeId, ShapeKind};
@@ -18,12 +24,23 @@ const MAX_TREE_JSON: usize = 1 << 20;
 
 pub fn specs() -> Vec<CommandSpec> {
     vec![
+        cmd!(noundo "equation.edit", "Edit Equation on Slide", [], None, "{id?, cell?, paragraph?, run?, start?, caret?: {path, pos}, extend?}", has_slide, inline::enter),
+        cmd!(noundo "equation.leave", "Leave Equation", [], None, "{start?: bool}: return to surrounding text", has_text, inline::leave),
+        cmd!(
+            "equation.key",
+            "Equation Key",
+            [],
+            None,
+            "{key, extend?: bool}: navigate or delete within the active equation",
+            has_text,
+            inline::key_command
+        ),
         cmd!(
             "insert.equation",
             "Equation",
             ["Insert", "Symbols"],
             None,
-            "{linear? | omml?, display?: bool, rect?: [x,y,w,h]} → {id, omml, linear}: a new text box holding the equation",
+            "{} starts an empty equation at the text caret or in a new box; {linear? | omml?, display?: bool, rect?: [x,y,w,h]} inserts a populated equation box",
             has_slide,
             insert_equation
         ),
@@ -186,8 +203,18 @@ fn cascade_rect(s: &Session) -> deckcraft_geom::Xfrm {
 }
 
 fn insert_equation(s: &mut Session, p: &Value) -> Result<Value> {
-    let m = math_param("insert.equation", p)?;
     let rect = opt_rect("insert.equation", p)?;
+    if opt(p, "linear").is_none() && opt(p, "omml").is_none() {
+        let m = Math { para: opt_bool("insert.equation", p, "display")?.unwrap_or(false), ..Default::default() };
+        let result = if rect.is_some() { insert_math_box(s, &m, rect)? } else { paste_math(s, &m)? };
+        let mut params = json!({});
+        if let Some((r, c)) = s.doc()?.selection.text.as_ref().and_then(|t| t.cell) {
+            params["cell"] = json!([r, c]);
+        }
+        inline::enter(s, &params)?;
+        return Ok(result);
+    }
+    let m = math_param("insert.equation", p)?;
     insert_math_box(s, &m, rect)
 }
 
@@ -235,6 +262,7 @@ pub(crate) fn paste_math(s: &mut Session, m: &Math) -> Result<Value> {
         let c = deckcraft_model::edit::insert_body(body, at, &src);
         t.anchor = c;
         t.caret = c;
+        t.equation = None;
         c
     })?;
     Ok(json!({"caret": [pos.0, pos.1], "omml": omml, "linear": linear}))
@@ -528,7 +556,6 @@ mod tests {
         let mut s = session();
         let before = s.doc().unwrap().revision;
         for p in [
-            json!({}),
             json!({"linear": ""}),
             json!({"linear": "   "}),
             json!({"omml": "not xml at all"}),

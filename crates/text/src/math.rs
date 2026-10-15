@@ -1180,15 +1180,29 @@ pub(crate) fn layout_math(m: &Math, base: &FontFace, size: f64, bold: bool, disp
 
 /// An equation laid out on its own (the equation editor's canvas), with the geometry that
 /// carets, selections and mouse clicks need. Coordinates are points from the top-left corner.
+#[derive(Clone, Debug)]
 pub struct EqLayout {
     /// Glyphs and rules, ready for `deckcraft_render::render_eq`.
     pub layout: crate::TextLayout,
     pub width: f64,
     pub height: f64,
-    geo: Vec<SeqGeo>,
+    pub geometry: EqGeometry,
 }
 
-impl EqLayout {
+/// Caret and selection geometry shared by the dialog and equations placed in a paragraph.
+#[derive(Clone, Debug, Default)]
+pub struct EqGeometry {
+    pub(crate) geo: Vec<SeqGeo>,
+}
+
+impl std::ops::Deref for EqLayout {
+    type Target = EqGeometry;
+    fn deref(&self) -> &EqGeometry {
+        &self.geometry
+    }
+}
+
+impl EqGeometry {
     fn row(&self, path: &[(usize, usize)]) -> Option<&SeqGeo> {
         self.geo.iter().find(|g| g.path == path)
     }
@@ -1271,7 +1285,7 @@ pub fn layout_equation(m: &Math, family: &str, size: f64, display: bool, color: 
         .iter()
         .map(|g| SeqGeo { path: g.path.clone(), xs: g.xs.iter().map(|x| x + ox).collect(), top: g.top + oy, bottom: g.bottom + oy })
         .collect();
-    EqLayout { width: b.w + 2.0 * pad, height: asc + desc + 2.0 * pad, layout, geo }
+    EqLayout { width: b.w + 2.0 * pad, height: asc + desc + 2.0 * pad, layout, geometry: EqGeometry { geo } }
 }
 
 type Key = (String, u32, u64, bool, bool);
@@ -1286,7 +1300,17 @@ pub(crate) fn layout_math_cached(omml: &str, base: &Arc<FontFace>, size: f64, bo
         return hit.clone();
     }
     let m = from_omml(omml);
-    let b = Arc::new(layout_math(&m, base, size, bold, m.para || solo));
+    let mut b = layout_math(&m, base, size, bold, m.para || solo);
+    if m.is_empty() {
+        // Reserve a field for the editor-only prompt. The saved OMML remains empty and
+        // exports contain neither the prompt nor its shading.
+        b.w = size * 9.0;
+        b.asc = b.asc.max(size * 0.8);
+        b.desc = b.desc.max(size * 0.25);
+        b.items.clear();
+        b.geo = vec![SeqGeo { path: vec![], xs: vec![0.0], top: -b.asc, bottom: b.desc }];
+    }
+    let b = Arc::new(b);
     if let Ok(mut g) = CACHE.lock() {
         let c = g.get_or_insert_with(HashMap::new);
         if c.len() >= CACHE_MAX {

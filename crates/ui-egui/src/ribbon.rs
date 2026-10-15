@@ -109,6 +109,9 @@ fn contextual(app: &SlideApp) -> Vec<&'static str> {
     if st.selection.target != Target::Slides {
         v.push("Slide Master");
     }
+    if deckcraft_engine::cmd::equation::active(st).is_some() {
+        v.push("Equation");
+    }
     let shapes = st.selected_shapes();
     if shapes.iter().any(|s| matches!(s.kind, ShapeKind::Shape | ShapeKind::Group { .. } | ShapeKind::Connector { .. }))
         || st.selection.text.is_some()
@@ -137,6 +140,15 @@ const TABS: [&str; 10] = ["Home", "Insert", "Draw", "Design", "Transitions", "An
 pub fn show(app: &mut SlideApp, ui: &mut Ui) {
     let t = Tokens::get(ui.ctx());
     let ctx_tabs = contextual(app);
+    if ctx_tabs.contains(&"Equation") {
+        if app.equation_previous_tab.is_none() {
+            app.equation_previous_tab = Some(if app.ui.tab == "Equation" { "Home".into() } else { app.ui.tab.clone() });
+            app.ui.tab = "Equation".into();
+            app.ui.ribbon_collapsed = false;
+        }
+    } else if let Some(previous) = app.equation_previous_tab.take() {
+        app.ui.tab = previous;
+    }
     if !TABS.contains(&app.ui.tab.as_str()) && !ctx_tabs.contains(&app.ui.tab.as_str()) {
         app.ui.tab = "Home".into();
     }
@@ -152,6 +164,7 @@ pub fn show(app: &mut SlideApp, ui: &mut Ui) {
             let w = ui.fonts_mut(|f| f.layout_no_wrap(name.to_string(), font.clone(), t.text).size().x) + 18.0;
             let r = Rect::from_min_size(pos2(x, y), vec2(w, 24.0));
             let resp = ui.interact(r, ui.id().with(("tab", name)), Sense::click());
+            resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::SelectableLabel, true, format!("{name} tab")));
             let active = app.ui.tab == name;
             if resp.hovered() && !active {
                 ui.painter().rect_filled(r.shrink2(vec2(2.0, 2.0)), CornerRadius::same(4), t.hover);
@@ -200,6 +213,7 @@ pub fn show(app: &mut SlideApp, ui: &mut Ui) {
             "Record" => record(app, ui),
             "Review" => review(app, ui),
             "View" => view(app, ui),
+            "Equation" => {} // Reserved for contextual equation controls.
             "Shape Format" => shape_format(app, ui),
             "Picture Format" => picture_format(app, ui),
             "Table Design" => table_design(app, ui),
@@ -1067,7 +1081,7 @@ fn insert(app: &mut SlideApp, ui: &mut Ui) {
         big(app, ui, Icon::SlideNumber, "Slide\nNumber", "insert.slideNumber", json!({}));
     });
     group(ui, |ui| {
-        big(app, ui, Icon::Equation, "Equation", "app.dialog", json!({"id": "equation"}));
+        big(app, ui, Icon::Equation, "Equation", "insert.equation", json!({}));
         big(app, ui, Icon::Symbol, "Symbol", "app.dialog", json!({"id": "symbol"}));
     });
     group(ui, |ui| {

@@ -178,6 +178,7 @@ pub struct SlideApp {
     pub textures: textures::Textures,
     pub control_rx: Option<Receiver<ControlRequest>>,
     pub dialog: Option<dialogs::Dialog>,
+    equation_previous_tab: Option<String>,
     pub show: Option<show::Show>,
     /// Audio/video playback (editor control bar, slide show, `media.*` commands).
     pub media: media::MediaHost,
@@ -245,6 +246,7 @@ impl SlideApp {
             quit_confirmed: false,
             notes_buf: (0, usize::MAX, String::new()),
             thumb_drag: None,
+            equation_previous_tab: None,
         }
     }
 
@@ -948,3 +950,6 @@ mod tests {
         assert!(!app.home_open() && app.home.is_none(), "with nothing open the start screen shows anyway");
     }
 }
+
+#[cfg(test)]
+mod equation_tests;

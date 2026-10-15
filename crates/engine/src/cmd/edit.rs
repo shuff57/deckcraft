@@ -68,6 +68,11 @@ fn media_of_shapes(shapes: &[Shape], out: &mut Vec<MediaId>) {
 
 fn copy_inner(s: &mut Session, p: &Value) -> Result<String> {
     let st = s.doc()?;
+    if let Some(ed) = super::equation::editor(st) {
+        let plain = ed.selected_linear().unwrap_or_default();
+        s.clipboard = crate::Clipboard { plain: plain.clone(), ..Default::default() };
+        return Ok(plain);
+    }
     // Text selection.
     if let Some(t) = &st.selection.text {
         if t.is_range() {
@@ -156,6 +161,10 @@ fn bring_media(doc: &mut deckcraft_model::Presentation, media: &[deckcraft_model
 }
 
 fn paste(s: &mut Session, p: &Value) -> Result<Value> {
+    if super::equation::active(s.doc()?).is_some() {
+        let text = str_param(p, "text").map(String::from).unwrap_or_else(|| s.clipboard.plain.clone());
+        return super::equation::paste(s, &text);
+    }
     // External plain text (from the system clipboard) wins when given and differs from ours.
     if let Some(t) = str_param(p, "text")
         && t != s.clipboard.plain

@@ -2,7 +2,7 @@
 
 **Stage: alpha** · next: beta, ~20 points and ~120–210 h away
 
-> **Last reviewed:** 2026-10-10 · **Last updated:** 2026-10-10 · **Change:** minor (hours to ~95% per audience added; ready 56% → 55%; stage stays alpha; previous: major, full re-measure against PowerPoint for Mac 16.113.4; restructured to the craftrules progress-docs standard) · **Target:** Microsoft PowerPoint for Mac 16.113 (Microsoft 365)
+> **Last reviewed:** 2026-10-10 · **Last updated:** 2026-10-14 · **Change:** minor (on-slide structured equation editing on the equation-editor branch; overall readiness estimates unchanged) · **Target:** Microsoft PowerPoint for Mac 16.113 (Microsoft 365)
 
 DeckCraft aims at full PowerPoint parity, and to be better: faster, open (a documented zip+JSON
 format plus PPTX), scriptable by agents (CLI, JSON control channel, MCP), and available everywhere
@@ -14,7 +14,7 @@ format plus PPTX), scriptable by agents (CLI, JSON control channel, MCP), and av
 
 | | Value | Kind |
 |---|---|---|
-| **Feature breadth** | **79%** weighted over 191 PowerPoint features (P0 92%, P1 75%, P2 36%) | measured: `cargo xtask parity` over [docs/parity-checklist.md](docs/parity-checklist.md) |
+| **Feature breadth** | **79%** weighted over 191 PowerPoint features (P0 92%, P1 75%, P2 37%) | measured: `cargo xtask parity` over [docs/parity-checklist.md](docs/parity-checklist.md) |
 | Menu-bar coverage | 59% of 217 app-specific PowerPoint menu items matched by name (lower bound) | measured: script over the PowerPoint menu dump and the 226 commands |
 | **Ready for real work** | **~55%** | estimated: weighted dimensions below |
 | Mainstream practitioner | ~53% | estimated: weekly-use areas × discounts for interaction (×0.92), stability (×0.92) and `.pptx` exchange (×0.88), [method](docs/target-app-parity.md#mainstream-practitioner-and-essentials-user) |
@@ -68,7 +68,7 @@ EMF/SVG pictures, the data-loss and startup-crash bugs (#60, #40, #59) and the b
 | Shapes | 86% | ~75% | 8–14 | [ui-parity](docs/ui-parity.md) |
 | Format (fill, line, effects) | 81% | ~65% | 8–14 | [ui-parity](docs/ui-parity.md) |
 | Arrange | 100% | ~90% | 1–2 | [ui-parity](docs/ui-parity.md) |
-| Text | 80% | ~62% | 18–30 | [gaps](docs/gaps.md#features) |
+| Text | 81% | ~62% | 18–30 | [gaps](docs/gaps.md#features) |
 | Tables | 89% | ~75% | 3–6 | [checklist](docs/parity-checklist.md) |
 | Charts | 65% | ~45% | 12–20 | [gaps](docs/gaps.md#charts-data-grid-elements-and-the-newer-chart-types) |
 | SmartArt | 33% | ~25% | 10–16 | [gaps](docs/gaps.md#smartart-is-pre-drawn-shapes-only) |
@@ -128,6 +128,7 @@ app's JSON control channel (`deckcraft --control PORT`).
 
 | Date | What landed |
 |---|---|
+| 2026-10-14 | Equation-editor branch: on-slide typing built on PR #55’s OMML editor; empty fields, Space-completed commands, structured caret navigation, contextual ribbon and plain-text exit |
 | 2026-10-10 | Progress docs restructured to the craftrules standard; full re-measure (breadth 79%, ready ~55%, mainstream ~53%, essentials ~62%, alpha). Landed: Animation Painter (#54), Morph geometry outlines (#27), animated GIF playback (#39), hyperlink colour and following links in the show (#37, #45), date fields in their own format (#36), flipped shapes keep readable text (#35), show transition fix (#46), start screen from the Home button (#49), MCP export lists PDF (#65), OmaStore manifest (#57) |
 | 2026-10-09 | v0.4.0 released. UAX #9 bidi and Arabic shaping (#4), Morph with Words and Characters (#5), tables grow to fit and PDF cell text (#14), rotating log file (#7), DX12 default on Windows (#16), H.264/HEVC overflow hardening (#2), PPTX sniffing anywhere in the zip (#19) |
 | 2026-10-08 | v0.2.0 and v0.3.0 released: Windows arm64, Flatpak aarch64, AppImage zsync updates, branded DMG |
@@ -139,6 +140,7 @@ app's JSON control channel (`deckcraft --control PORT`).
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-14 | minor | Equation-editor branch: on-slide structured OMML editing, contextual tab, field shading and prose exit; full equation parity remains partial |
 | 2026-10-10 | minor | Readiness-by-audience table with hours to ~95% for full, mainstream and essentials |
 | 2026-10-10 | minor | Added mainstream practitioner (~53%) and essentials user (~62%); features recomputed from written area weights, ready ~56% → ~55% |
 | 2026-10-10 | minor | Stage checked against the new core-workflow gate: passes, stays alpha |

@@ -409,20 +409,47 @@ fn overlays(app: &mut SlideApp, ui: &Ui, painter: &egui::Painter, xf: Xf, t: &To
     // Caret / text selection.
     if let Some(ts) = &editing
         && !ts.notes
-        && ts.cell.is_none()
-        && let Some(sh) = st.shape(ts.shape)
         && let Some(l) = deckcraft_engine::cmd::text::layout_for(st, ts)
+        && let Some(m) = deckcraft_engine::cmd::text::transform_for(st, ts, &l)
     {
-        let x = deckcraft_engine::cmd::xfrm_of(&st.doc, &st.selection, sh);
-        // Where the text is drawn: flips don't mirror it, vertical text is turned.
-        let tr = deckcraft_render::shape_geometry(sh, x.w, x.h).text_rect;
-        let m = deckcraft_render::text_transform(x.affine(), tr, l.rotation);
+        let equation = deckcraft_engine::cmd::equation::active(st)
+            .and_then(|e| l.equations.iter().find(|q| q.para == ts.caret.0 && q.chars.0 == ts.caret.1).map(|q| (e, q)));
+        if let Some((e, q)) = equation {
+            let polygon = |r: deckcraft_geom::Rect| {
+                [Point::new(r.x0, r.y0), Point::new(r.x1, r.y0), Point::new(r.x1, r.y1), Point::new(r.x0, r.y1)].map(|p| xf.to_screen(m * p)).to_vec()
+            };
+            painter.add(egui::Shape::convex_polygon(polygon(q.rect.inflate(2.0, 1.0)), t.equation_shading, Stroke::NONE));
+            if let Some(a) = e.anchor
+                && let Some(r) = q.geometry.span_rect(&e.caret.path, a, e.caret.pos)
+            {
+                painter.add(egui::Shape::convex_polygon(polygon(r), t.text_selection, Stroke::NONE));
+            }
+            let blank = deckcraft_engine::cmd::text::body_of(st, ts)
+                .and_then(|b| b.paragraphs.get(ts.caret.0))
+                .and_then(|p| p.runs.get(e.run))
+                .is_some_and(|r| matches!(&r.kind, deckcraft_model::text::RunKind::Math { omml } if deckcraft_math::from_omml(omml).is_empty()));
+            if blank {
+                painter.text(
+                    xf.to_screen(m * Point::new(q.rect.x0 + 2.0, (q.rect.y0 + q.rect.y1) / 2.0)),
+                    egui::Align2::LEFT_CENTER,
+                    "Type equation here",
+                    theme::font((q.rect.height() * 0.85) as f32 * xf.scale),
+                    t.text_dim,
+                );
+            }
+            ui.ctx().request_repaint_after(std::time::Duration::from_millis(300));
+            if (ui.input(|i| i.time) * 1.6).fract() < 0.6
+                && let Some(r) = q.geometry.caret_rect(&e.caret)
+            {
+                painter.line_segment([xf.to_screen(m * Point::new(r.x0, r.y0)), xf.to_screen(m * Point::new(r.x0, r.y1))], Stroke::new(1.5, t.caret));
+            }
+        }
         let (s0, s1) = ts.ordered();
         for r in l.selection_rects(deckcraft_text::Pos { para: s0.0, ch: s0.1 }, deckcraft_text::Pos { para: s1.0, ch: s1.1 }) {
             let pts = [Point::new(r.x0, r.y0), Point::new(r.x1, r.y0), Point::new(r.x1, r.y1), Point::new(r.x0, r.y1)].map(|q| xf.to_screen(m * q));
             painter.add(egui::Shape::convex_polygon(pts.to_vec(), t.text_selection, Stroke::NONE));
         }
-        if !ts.is_range() {
+        if !ts.is_range() && equation.is_none() {
             let blink = (ui.input(|i| i.time) * 1.6).fract() < 0.6;
             ui.ctx().request_repaint_after(std::time::Duration::from_millis(300));
             if blink && let Some((cx, top, bot)) = l.caret(deckcraft_text::Pos { para: ts.caret.0, ch: ts.caret.1 }) {
