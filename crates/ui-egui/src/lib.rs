@@ -14,6 +14,8 @@ pub mod dialogs;
 pub mod doc_window;
 pub mod eyedropper;
 pub mod icons;
+pub mod equation_editor;
+pub mod equation_tab;
 pub mod media;
 pub mod menus;
 pub mod opening;
@@ -215,6 +217,8 @@ pub struct SlideApp {
     pub dialog: Option<dialogs::Dialog>,
     /// The word looked up in the Thesaurus pane.
     pub thesaurus_query: String,
+    /// The equation editor (equaSHion's widget) while the Equation dialog is open.
+    pub(crate) equation: equation_editor::EquationHost,
     pub show: Option<show::Show>,
     /// Current slide's animations playing on the editor canvas (not the full-screen show).
     anim_preview: Option<AnimPreview>,
