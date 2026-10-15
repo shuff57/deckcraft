@@ -25,6 +25,7 @@ mod layout;
 use autocorrect::autocorrect_options;
 pub use autocorrect::{AUTOCORRECT, AutoList, correct_word};
 pub(crate) use caret::{apply_leading_tabs, delete_dir};
+pub use caret::paragraph_is_rtl;
 use caret::{delete, delete_surrounding, get, insert, move_caret, select, select_all, select_para, select_word, set};
 use editing::{edit, exit};
 pub(crate) use editing::{insert_field, insert_text, paste_body};
