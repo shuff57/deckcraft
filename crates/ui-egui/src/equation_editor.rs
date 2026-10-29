@@ -227,13 +227,10 @@ pub fn in_place(app: &mut SlideApp, ctx: &egui::Context, d: &mut Dialog) -> bool
         });
     }
     let mut response = None;
-    let area = egui::Area::new(egui::Id::new("deckcraft-equation-in-place"))
-        .order(egui::Order::Foreground)
-        .fixed_pos(top_left)
-        .show(ctx, |ui| {
-            ui.visuals_mut().selection.stroke.color = t.accent;
-            response = Some(o.widget.show(ui));
-        });
+    let area = egui::Area::new(egui::Id::new("deckcraft-equation-in-place")).order(egui::Order::Foreground).fixed_pos(top_left).show(ctx, |ui| {
+        ui.visuals_mut().selection.stroke.color = t.accent;
+        response = Some(o.widget.show(ui));
+    });
     if response.as_ref().is_some_and(|r| r.changed)
         && let Err(e) = sync(app, &mut o)
     {
@@ -422,11 +419,18 @@ mod tests {
         h.get_by_label("Stacked Fraction").click();
         steps(&mut h, 3);
         let eq = h.state().equation.widget().map(|w| w.math().clone()).unwrap();
-        assert!(matches!(eq.body.first().map(equashion_egui::equashion_math::Node::bare), Some(equashion_egui::equashion_math::Node::Frac { .. })), "{eq:?}");
+        assert!(
+            matches!(eq.body.first().map(equashion_egui::equashion_math::Node::bare), Some(equashion_egui::equashion_math::Node::Frac { .. })),
+            "{eq:?}"
+        );
         // The symbol strip is on the tab itself: the first set's first symbols.
         h.get_by_label("\u{221e}").click();
         steps(&mut h, 3);
-        assert!(h.state().equation.widget().is_some_and(|w| w.linear().contains('\u{221e}')), "{:?}", h.state().equation.widget().map(|w| w.linear()));
+        assert!(
+            h.state().equation.widget().is_some_and(|w| w.linear().contains('\u{221e}')),
+            "{:?}",
+            h.state().equation.widget().map(|w| w.linear())
+        );
         // Display and Inline switch the equation's flag.
         assert!(!h.state().equation.widget().unwrap().is_display());
         h.get_by_label("Display").click();
@@ -517,19 +521,33 @@ mod tests {
         h.state_mut().run("text.edit", json!({"id": id, "at": [0, 0]})).unwrap();
         h.state_mut().run("text.insert", json!({"text": "hi "})).unwrap();
         steps(&mut h, 2);
-        let n = h.state().session.active().and_then(|d| d.shape(deckcraft_model::ShapeId(id as u32)).and_then(|s| s.text.as_ref().map(|b| b.paragraphs[0].char_len()))).unwrap();
+        let n = h
+            .state()
+            .session
+            .active()
+            .and_then(|d| d.shape(deckcraft_model::ShapeId(id as u32)).and_then(|s| s.text.as_ref().map(|b| b.paragraphs[0].char_len())))
+            .unwrap();
         // Caret at the end, right after the equation: Left goes into it, at its right end.
         h.state_mut().run("text.edit", json!({"id": id, "end": true})).unwrap();
         h.state_mut().run("text.move", json!({"to": "left"})).unwrap();
         steps(&mut h, 4);
         assert!(h.state().equation.is_open(), "Left next to the equation goes into it");
         type_text(&mut h, "z");
-        assert!(h.state().equation.widget().is_some_and(|w| w.linear().ends_with('z')), "entered at the right end: {:?}", h.state().equation.widget().map(|w| w.linear()));
+        assert!(
+            h.state().equation.widget().is_some_and(|w| w.linear().ends_with('z')),
+            "entered at the right end: {:?}",
+            h.state().equation.widget().map(|w| w.linear())
+        );
         // Right at the end: out, caret after the equation (the end of the text).
         h.key_press(egui::Key::ArrowRight);
         steps(&mut h, 4);
         assert!(!h.state().equation.is_open(), "Right at the end leaves the equation");
-        let end = h.state().session.active().and_then(|d| d.shape(deckcraft_model::ShapeId(id as u32)).and_then(|s| s.text.as_ref().map(|b| b.paragraphs[0].char_len()))).unwrap();
+        let end = h
+            .state()
+            .session
+            .active()
+            .and_then(|d| d.shape(deckcraft_model::ShapeId(id as u32)).and_then(|s| s.text.as_ref().map(|b| b.paragraphs[0].char_len())))
+            .unwrap();
         assert!(end > n, "the typed z is in the equation");
         assert_eq!(text_caret(h.state()), Some((0, end)), "caret right after the equation");
         // Typing goes on as text after it.
@@ -577,7 +595,11 @@ mod tests {
         eprintln!("RUNS {runs:?}");
         let before = runs.iter().find(|r| r.0.starts_with("hi")).cloned().expect("the text before");
         let after = runs.iter().find(|r| r.0.contains("after")).cloned().expect("the typed text");
-        assert_eq!((after.1, after.2.clone(), after.3), (before.1, before.2.clone(), before.3), "typed text takes the surrounding text's formatting: {runs:?}");
+        assert_eq!(
+            (after.1, after.2.clone(), after.3),
+            (before.1, before.2.clone(), before.3),
+            "typed text takes the surrounding text's formatting: {runs:?}"
+        );
     }
 
     /// An equation pasted into formatted text, then left by the arrow: what is typed next looks
@@ -599,7 +621,13 @@ mod tests {
                 .session
                 .active()
                 .and_then(|d| d.shape(deckcraft_model::ShapeId(id as u32)).and_then(|s| s.text.clone()))
-                .map(|b| b.paragraphs[0].runs.iter().map(|r| (r.text.clone(), r.props.size, r.props.bold, matches!(r.kind, RunKind::Math { .. }))).collect())
+                .map(|b| {
+                    b.paragraphs[0]
+                        .runs
+                        .iter()
+                        .map(|r| (r.text.clone(), r.props.size, r.props.bold, matches!(r.kind, RunKind::Math { .. })))
+                        .collect()
+                })
                 .unwrap_or_default()
         };
         eprintln!("PASTED {:?}", dump(&h));
@@ -631,7 +659,11 @@ mod tests {
         h.state_mut().run("format.rtl", json!({"on": true})).unwrap();
         steps(&mut h, 2);
         let len = |h: &Harness<'static, SlideApp>| {
-            h.state().session.active().and_then(|d| d.shape(deckcraft_model::ShapeId(id as u32)).and_then(|s| s.text.as_ref().map(|b| b.paragraphs[0].char_len()))).unwrap()
+            h.state()
+                .session
+                .active()
+                .and_then(|d| d.shape(deckcraft_model::ShapeId(id as u32)).and_then(|s| s.text.as_ref().map(|b| b.paragraphs[0].char_len())))
+                .unwrap()
         };
         let end = len(&h);
         // The caret just before the equation (logical): in right-to-left text the equation is

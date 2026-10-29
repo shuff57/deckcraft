@@ -1,11 +1,11 @@
-use super::math;
 use super::breaking::{BreakParams, RawLine, Tab, break_lines, line_metrics, measure_str, tab_advance, tab_segment, tabs_of};
+use super::math;
 use super::run::{Deco, DecoLine, GlyphRun};
 use super::shape::{SUB_SUPER, Upright, shape_para};
 use super::style::{Cell, Opts, ParaShaped, Style, spacing_pts};
 use super::{
-    Align, Anchor, Arc, AutoFit, BodyProps, Bullet, Caps, Ctx, EquationPlace, FontFace, LineInfo, Rect, Shape, Spacing, Strike, TextBody, TextDir, TextLayout, bidi,
-    joins_following, joins_preceding, resolve,
+    Align, Anchor, Arc, AutoFit, BodyProps, Bullet, Caps, Ctx, EquationPlace, FontFace, LineInfo, Rect, Shape, Spacing, Strike, TextBody, TextDir,
+    TextLayout, bidi, joins_following, joins_preceding, resolve,
 };
 
 #[cfg(test)]
@@ -697,7 +697,14 @@ fn emit_line_runs(out: &mut TextLayout, p: &ParaShaped, line: &LineInfo, place: 
                 display: m.display,
             });
             if let Some(hl) = st.highlight {
-                out.decos.push(Deco { rect: Rect::new(cx, line.top, cx1, line.bottom), color: hl, behind: true, para: line.para, line: DecoLine::Solid, path: None });
+                out.decos.push(Deco {
+                    rect: Rect::new(cx, line.top, cx1, line.bottom),
+                    color: hl,
+                    behind: true,
+                    para: line.para,
+                    line: DecoLine::Solid,
+                    path: None,
+                });
             }
             continue;
         }
@@ -775,7 +782,14 @@ fn push_tatweel(r: &mut GlyphRun, face: Option<&Arc<FontFace>>, cell: &Cell, fil
 fn push_cell_decos(out: &mut TextLayout, cell: &Cell, st: &Style, line: &LineInfo, pos: &CellPos) {
     let (cx, cx1) = (pos.cx, pos.cx1);
     if let Some(hl) = st.highlight {
-        out.decos.push(Deco { rect: Rect::new(cx, line.top, cx1, line.bottom), color: hl, behind: true, para: line.para, line: DecoLine::Solid, path: None });
+        out.decos.push(Deco {
+            rect: Rect::new(cx, line.top, cx1, line.bottom),
+            color: hl,
+            behind: true,
+            para: line.para,
+            line: DecoLine::Solid,
+            path: None,
+        });
     }
     if cell.ch.is_whitespace() && st.underline.is_none() {
         return;
@@ -800,7 +814,14 @@ fn push_cell_decos(out: &mut TextLayout, cell: &Cell, st: &Style, line: &LineInf
         let k = st.size / st.face.upem.max(1.0);
         let t = (st.face.strikeout.1 * k).max(0.5);
         let sy = line.baseline - st.face.strikeout.0 * k;
-        out.decos.push(Deco { rect: Rect::new(cx, sy, cx1, sy + t), color: st.color, behind: false, para: line.para, line: DecoLine::Solid, path: None });
+        out.decos.push(Deco {
+            rect: Rect::new(cx, sy, cx1, sy + t),
+            color: st.color,
+            behind: false,
+            para: line.para,
+            line: DecoLine::Solid,
+            path: None,
+        });
         if sk == Strike::Double {
             out.decos.push(Deco {
                 rect: Rect::new(cx, sy - t * 2.0, cx1, sy - t),

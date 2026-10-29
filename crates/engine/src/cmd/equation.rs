@@ -420,7 +420,12 @@ fn drawn(s: &Session, id: ShapeId, cell: Cell, pi: usize, ri: usize) -> Option<D
     let Some(e) = l.equations.iter().find(|e| e.para == pi && e.ch == at) else { return Some(whole) };
     let (a, b) = (aff * Point::new(e.x, e.baseline - e.ascent), aff * Point::new(e.x + e.width, e.baseline + e.descent));
     let base = aff * Point::new(e.x, e.baseline);
-    Some(Drawn { rect: [a.x.min(b.x), a.y.min(b.y), (b.x - a.x).abs(), (b.y - a.y).abs()], baseline: Some(base.y), size: Some(e.size), display: Some(e.display) })
+    Some(Drawn {
+        rect: [a.x.min(b.x), a.y.min(b.y), (b.x - a.x).abs(), (b.y - a.y).abs()],
+        baseline: Some(base.y),
+        size: Some(e.size),
+        display: Some(e.display),
+    })
 }
 
 fn place(s: &mut Session, p: &Value) -> Result<Value> {

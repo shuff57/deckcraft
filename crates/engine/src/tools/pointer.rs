@@ -1,4 +1,6 @@
-use super::hit::{EditZone, contains_rect, edit_zone, edited_box, equation_dialog, hit_shape, in_table_cell, is_text_first, math_run_at, shape_in_front};
+use super::hit::{
+    EditZone, contains_rect, edit_zone, edited_box, equation_dialog, hit_shape, in_table_cell, is_text_first, math_run_at, shape_in_front,
+};
 use super::{
     Arc, DRAW_TABLE, Drag, HistoryEntry, Hit, Mods, Point, PointerEvent, PointerKind, Rect, Result, Session, ShapeId, ShapeKind, TABLE_ERASER,
     TextTarget, ToolKind, Value, Xfrm, box_handles, cmd, is_freeform_tool, json, wordart_handles, xfrm_of,

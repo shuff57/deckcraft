@@ -8,8 +8,8 @@
 //! Normal Text and equation numbers.
 
 use egui::{Align2, Color32, Rect, Sense, Stroke, StrokeKind, Ui, pos2, vec2};
-use equashion_egui::equashion_math::{GalleryTemplate, Math, galleries};
 use equashion_egui::EquationEditor;
+use equashion_egui::equashion_math::{GalleryTemplate, Math, galleries};
 
 use crate::SlideApp;
 use crate::icons::Icon;
