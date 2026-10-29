@@ -657,6 +657,8 @@ fn math_xml(part: &Part, e: &El) -> String {
             .iter()
             .find(|(k, _)| k == key)
             .or_else(|| part.ns.iter().find(|(k, _)| k == key))
+            // A prefix only an enclosing wrapper (`mc:Choice`) binds.
+            .or_else(|| part.inner_ns.iter().find(|(k, _)| k == key))
             .map(|(_, v)| v.clone())
             .or_else(|| (key == "xmlns:m").then(|| "http://schemas.openxmlformats.org/officeDocument/2006/math".to_string()))
     };
