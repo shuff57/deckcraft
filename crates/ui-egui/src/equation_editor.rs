@@ -227,7 +227,7 @@ pub fn in_place(app: &mut SlideApp, ctx: &egui::Context, d: &mut Dialog) -> bool
         });
     }
     let mut response = None;
-    let area = egui::Area::new(egui::Id::new("deckcraft-equation-in-place")).order(egui::Order::Foreground).fixed_pos(top_left).show(ctx, |ui| {
+    let area = egui::Area::new(egui::Id::unique("deckcraft-equation-in-place")).order(egui::Order::Foreground).fixed_pos(top_left).show(ctx, |ui| {
         ui.visuals_mut().selection.stroke.color = t.accent;
         response = Some(o.widget.show(ui));
     });

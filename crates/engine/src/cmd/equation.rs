@@ -8,7 +8,7 @@ use deckcraft_model::text::{Run, RunKind, RunProps};
 use deckcraft_model::{ShapeId, ShapeKind};
 use serde_json::{Value, json};
 
-use super::*;
+use super::{CommandSpec, always, bad, cmd, has_slide, text, xfrm_of};
 use crate::equashion_bridge::{eq, run_payload, to_editor};
 use crate::{EngineError, Result, Session};
 

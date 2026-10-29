@@ -36,7 +36,7 @@ fn math_button(ui: &mut Ui, ed: &mut EquationEditor, key: &str, picture: &Math, 
     let w = (galley_w + 22.0).max(46.0);
     let (r, resp) = ui.allocate_exact_size(vec2(w, RIBBON_H - 2.0), Sense::click());
     let name = label.replace('\n', " ");
-    resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, true, &name));
+    resp.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, &name));
     if resp.hovered() {
         ui.painter().rect_filled(r, 4.0, t.hover);
     }
@@ -62,7 +62,7 @@ fn math_button(ui: &mut Ui, ed: &mut EquationEditor, key: &str, picture: &Math, 
 fn tile(ui: &mut Ui, ed: &mut EquationEditor, tpl: &GalleryTemplate, size: egui::Vec2) -> bool {
     let t = Tokens::get(ui.ctx());
     let (r, resp) = ui.allocate_exact_size(size, Sense::click());
-    resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, true, &tpl.label));
+    resp.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, &tpl.label));
     ui.painter().rect_filled(r, 2.0, Color32::WHITE);
     if resp.hovered() {
         ui.painter().rect_stroke(r, 2.0, Stroke::new(1.5, t.accent), StrokeKind::Inside);
@@ -113,7 +113,7 @@ fn builtin_menu(ui: &mut Ui, ed: &mut EquationEditor) {
             let t = Tokens::get(ui.ctx());
             ui.label(egui::RichText::new(&b.label).font(theme::bold(11.5)).color(t.text));
             let (r, resp) = ui.allocate_exact_size(vec2(350.0, 64.0), Sense::click());
-            resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, true, &b.label));
+            resp.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, &b.label));
             ui.painter().rect_filled(r, 2.0, Color32::WHITE);
             if resp.hovered() {
                 ui.painter().rect_stroke(r, 2.0, Stroke::new(1.5, t.accent), StrokeKind::Inside);
@@ -152,7 +152,7 @@ pub fn insert_button(app: &mut SlideApp, ui: &mut Ui) {
                 let t = Tokens::get(ui.ctx());
                 ui.label(egui::RichText::new(&b.label).font(theme::bold(11.5)).color(t.text));
                 let (r, resp) = ui.allocate_exact_size(vec2(350.0, 64.0), Sense::click());
-                resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, true, &b.label));
+                resp.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, &b.label));
                 ui.painter().rect_filled(r, 2.0, Color32::WHITE);
                 if resp.hovered() {
                     ui.painter().rect_stroke(r, 2.0, Stroke::new(1.5, t.accent), StrokeKind::Inside);
@@ -184,7 +184,7 @@ fn symbol_button(ui: &mut Ui, ed: &mut EquationEditor, c: char) -> bool {
     let t = Tokens::get(ui.ctx());
     let (r, resp) = ui.allocate_exact_size(vec2(22.0, 22.0), Sense::click());
     let s = c.to_string();
-    resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, true, &s));
+    resp.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, &s));
     ui.painter().rect_filled(r, 2.0, Color32::WHITE);
     if resp.hovered() {
         ui.painter().rect_stroke(r, 2.0, Stroke::new(1.0, t.accent), StrokeKind::Inside);
@@ -198,10 +198,10 @@ fn symbol_button(ui: &mut Ui, ed: &mut EquationEditor, c: char) -> bool {
 /// The Symbols group: a strip of the current set's symbols, and a menu with every set.
 fn symbols(ui: &mut Ui, ed: &mut EquationEditor) {
     let sets = &galleries().symbols;
-    let id = egui::Id::new("deck_eq_symbol_set");
+    let id = egui::Id::unique("deck_eq_symbol_set");
     let set = ui.data(|d| d.get_temp::<usize>(id)).unwrap_or(0).min(sets.len().saturating_sub(1));
     let Some(current) = sets.get(set) else { return };
-    let start_id = egui::Id::new("deck_eq_symbol_start");
+    let start_id = egui::Id::unique("deck_eq_symbol_start");
     let per_row = 10usize;
     let n_rows = 3usize;
     let all: Vec<char> = current.chars.chars().collect();
@@ -266,7 +266,7 @@ fn symbols(ui: &mut Ui, ed: &mut EquationEditor) {
 /// The ribbon's small button, with its label for assistive technology.
 fn small_button(ui: &mut Ui, icon: Icon, label: &str, enabled: bool, selected: bool) -> egui::Response {
     let r = crate::widgets::small_button(ui, icon, label, enabled, selected);
-    r.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, enabled, label));
+    r.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, enabled, label));
     r
 }
 
