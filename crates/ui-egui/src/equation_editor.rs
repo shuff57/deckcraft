@@ -473,7 +473,11 @@ mod tests {
         let style_before = h.ctx.global_style();
         open_new(&mut h);
         assert!(h.state().equation.is_open(), "Insert › Equation opens the equaSHion widget");
-        assert!(h.query_by_label("Insert").is_none() && h.query_by_label("Cancel").is_none(), "no dialog buttons: the ribbon does the choosing");
+        // The ribbon's own "Insert" tab is the only thing so labelled: no dialog Insert/Cancel buttons.
+        assert!(
+            h.query_all_by_label("Insert").count() <= 1 && h.query_by_label("Cancel").is_none(),
+            "no dialog buttons: the ribbon does the choosing"
+        );
         let canvas = h.state().equation.widget().map(|w| w.canvas_id());
         assert!(canvas.is_some_and(|c| h.ctx.memory(|m| m.has_focus(c))), "typing goes to the widget");
         let depth = undo_depth(h.state());
